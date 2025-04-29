@@ -13,12 +13,13 @@ class ColorDetectionNode(Node):
     """
     color = (255,255,255)
 
-    colors = {'blue': [np.array([95, 255, 85]), np.array([120, 255, 255])],
-        'red': [np.array([161, 165, 127]), np.array([178, 255, 255])],
-        'yellow': [np.array([16, 0, 99]), np.array([39, 255, 255])],
-        'green': [np.array([33, 19, 105]), np.array([77, 255, 255])]}
+    # Colors to check search for in hsv format
+    colors = {'blue': [np.array([90, 50, 70]), np.array([128, 255, 255])],
+        'red': [np.array([159, 50, 70]), np.array([180, 255, 255])],
+        'yellow': [np.array([25, 50, 70]), np.array([35, 255, 255])],
+        'green': [np.array([36, 50, 70]), np.array([89, 255, 255])]}
     
-    def find_color(frame, points):
+    def find_color(self, frame, points):
         mask = cv.inRange(frame, points[0], points[1])#create mask with boundaries 
         cnts = cv.findContours(mask, cv.RETR_TREE, 
                                cv.CHAIN_APPROX_SIMPLE) # find contours from mask
@@ -45,7 +46,7 @@ class ColorDetectionNode(Node):
         # Publish the filtered image
         self.publisher = self.create_publisher(
             Image,
-            'output_image',
+            'image_output',
             10)
   
         # Initialize CVBridge
