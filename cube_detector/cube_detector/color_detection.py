@@ -5,7 +5,6 @@ from rcl_interfaces.msg import SetParametersResult
 from cv_bridge import CvBridge
 import cv2 as cv
 import numpy as np
-import imutils
 
 class ColorDetectionNode(Node):
     """
@@ -21,9 +20,8 @@ class ColorDetectionNode(Node):
     
     def find_color(self, frame, points):
         mask = cv.inRange(frame, points[0], points[1])#create mask with boundaries 
-        cnts = cv.findContours(mask, cv.RETR_TREE, 
+        cnts, _ = cv.findContours(mask, cv.RETR_EXTERNAL, 
                                cv.CHAIN_APPROX_SIMPLE) # find contours from mask
-        cnts = imutils.grab_contours(cnts)
         for c in cnts:
             area = cv.contourArea(c) # find how big countour is
             if area > 5000:       # only if countour is big enough, then
