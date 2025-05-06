@@ -4,9 +4,9 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription([
         Node(
-            package='robot_controller_pkg',  # The name of your package
-            executable='moveit_controller',  # The name of the executable
-            name='moveit_controller_node',  # Optional: name of the node
+            package='robot_controller_pkg',  # name of  package
+            executable='moveit_controller',  #  name of the executable
+            name='moveit_controller_node',  #name of the node
             output='screen'
         ),
         Node(
