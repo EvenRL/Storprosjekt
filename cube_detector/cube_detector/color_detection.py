@@ -5,6 +5,9 @@ from rcl_interfaces.msg import SetParametersResult
 from cv_bridge import CvBridge
 import cv2 as cv
 import numpy as np
+from geometry_msgs.msg import PoseStamped
+from tf2_ros import TransformBroadcaster
+from tf_transformations import quaternion_from_matrix
 
 class ColorDetectionNode(Node):
     """
@@ -68,6 +71,29 @@ class ColorDetectionNode(Node):
                         image_points = np.array(corners, dtype=np.float32)
 
                         success, rvec, tvec = cv.solvePnP(object_points, image_points, camera_matrix, dist_coeffs)
+                        
+                        # Publish cube pose
+                        pose_msg = PoseStamped()
+                        pose_msg.header.stamp = self.get_clock().now().to_msg()
+                        pose_msg.header.frame_id = "camera_optical_frame"
+                    
+                        rotation_matrix, _ = cv.Rodrigues(rvec)
+                        transformation_matrix = np.eye(4)
+                        transformation_matrix[:3, :3] = rotation_matrix
+                        transformation_matrix[:3, 3] = tvec.flatten()
+                    
+                        pose_msg.pose.position.x = float(tvec[0])
+                        pose_msg.pose.position.y = float(tvec[1])
+                        pose_msg.pose.position.z = float(tvec[2])
+                    
+                        q = quaternion_from_matrix(transformation_matrix)
+                        pose_msg.pose.orientation.x = q[0]
+                        pose_msg.pose.orientation.y = q[1]
+                        pose_msg.pose.orientation.z = q[2]
+                        pose_msg.pose.orientation.w = q[3]
+                    
+                        self.create_publisher(PoseStamped, '/detected_cube_poses', 10).publish(pose_msg)
+
                         imgpts, _ = cv.projectPoints(cube_points, rvec, tvec, camera_matrix, dist_coeffs)
                         imgpts = np.int32(imgpts).reshape(-1,2)
 
@@ -76,6 +102,7 @@ class ColorDetectionNode(Node):
                             cv.line(image, tuple(imgpts[i]), tuple(imgpts[i+4]), (0,255,0), 2)
                         
                         cv.drawContours(image, [imgpts[4:]], -1, (0,0,255), 2)
+
 
         return image
 
