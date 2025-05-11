@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'color_detection = cube_detector.color_detection:main'
+            'color_detection = cube_detector.color_detection:main',
+            'transformation = cube_detector.transformation:main'
         ],
     },
 )
