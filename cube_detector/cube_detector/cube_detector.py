@@ -82,7 +82,7 @@ class CubeDetectorNode(Node):
             self.get_logger().error('Failed to convert image: %s' % str(e))
             return
   
-        self.publisher.publish(cube_msg)
+        self.img_publisher.publish(cube_msg)
 
     def findCubePoses(self, image):
         """
@@ -123,8 +123,10 @@ class CubeDetectorNode(Node):
                             cv.drawContours(image,[imgpts[:4]], -1, (255,0,0), 2)
                             for i in range(4):
                                 cv.line(image, tuple(imgpts[i]), tuple(imgpts[i+4]), (0,255,0), 2)
-
                             cv.drawContours(image, [imgpts[4:]], -1, (0,0,255), 2)
+                            
+                        else:
+                            self.get_logger().warn(f"Pose estimation failed for color {name}")
 
         return image
     
