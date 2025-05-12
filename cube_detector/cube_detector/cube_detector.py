@@ -22,6 +22,8 @@ class CubeDetectorNode(Node):
 
     def __init__(self):
         super().__init__('cube_detector')
+    
+        self.calibration_loaded = False
 
         # Subscribe to camera info topic to get camera parameters
         self.cam_info_subscriber = self.create_subscription(
