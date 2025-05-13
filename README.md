@@ -3,7 +3,7 @@ This repository is for the Mega-project assignment in subject AIS2105.
 
 ## Project Overview
 
-The following project features the UR5e robot, where the group is focusing on programming and allowing it to detect, identify and point to colored cubes. The robot is assigned to:
+The following project features the UR3 robot, where the group is focusing on programming and allowing it to detect, identify and point to colored cubes. The robot is assigned to:
 
 * Capture an image with the connected camera
 * Detect different cube colors
