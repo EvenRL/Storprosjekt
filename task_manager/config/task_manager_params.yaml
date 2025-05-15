@@ -1,0 +1,7 @@
+task_manager:
+  ros__parameters:
+    use_sim_time: false
+    home_position: [0.0, -1.57, 0.0, -1.57, 0.0, 0.0]
+    overview_position: [0.0, -1.0, 0.5, -1.0, 0.0, 0.0]
+    pointing_distance: 0.1
+    search_positions: [[0.3, -0.8, 0.5, -1.0, 0.0, 0.0], [-0.3, -0.8, 0.5, -1.0, 0.0, 0.0]]
