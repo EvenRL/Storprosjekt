@@ -48,7 +48,7 @@ The Task Manager node coordinates a robot's actions to:
 
 `task_manager` directory structure:
 
-task_manager/
+``task_manager/
 ├── launch/
 │   └── task_manager.launch.py
 ├── package.xml
@@ -58,7 +58,7 @@ task_manager/
 ├── setup.py
 └── task_manager/
     ├── __init__.py
-    └── task_manager_node.py
+    └── task_manager_node.py``
 
 To start the Task Manager:
 
