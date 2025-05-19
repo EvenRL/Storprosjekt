@@ -6,7 +6,7 @@ from cube_interfaces.msg import ColorRange, ColorRangeArray
 from python_qt_binding.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QSlider, QPushButton, QLineEdit, QFileDialog,
-    QMessageBox, QScrollArea, QSizePolicy
+    QMessageBox, QScrollArea, QSizePolicy, QSpinBox
 )
 from python_qt_binding.QtCore import Qt
 
@@ -62,13 +62,31 @@ class ColorTuner(Node, QWidget):
         for i, label in enumerate(['Hl','Sl','Vl','Hu','Su','Vu']):
             col = QVBoxLayout()
             col.addWidget(QLabel(label))
+
+            # create slider and spinbox
             s = QSlider(Qt.Horizontal)
-            s.setRange(0, 179 if i%3==0 else 255)
-            s.setValue(0 if i<3 else s.maximum())
+            maximum = 179 if i % 3 == 0 else 255
+            s.setRange(0, maximum)
+            s.setValue(0 if i < 3 else maximum)
+
+            spin = QSpinBox()
+            spin.setRange(0, maximum)
+            spin.setValue(s.value())
+            spin.setFixedWidth(60)
+
+            s.valueChanged.connect(spin.setValue)
+            spin.valueChanged.connect(s.setValue)
+
             s.sliderReleased.connect(self.publish_all)
-            col.addWidget(s)
+            spin.editingFinished.connect(self.publish_all)
+
+            sub = QHBoxLayout()
+            sub.addWidget(s,      stretch=1)
+            sub.addWidget(spin,    stretch=0)
+            col.addLayout(sub)
+
             row.addLayout(col)
-            sliders.append(s)
+            sliders.append((s, spin))
 
         self.container_layout.addLayout(row)
         self.entries.append((name, sliders))
