@@ -15,11 +15,12 @@ setup(
     zip_safe=True,
     maintainer='even',
     maintainer_email='52103879+EvenRL@users.noreply.github.com',
-    description='TODO: Package description',
+    description='GUI for easy tuning of hsv color ranges',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'color_tuner = color_tuner.color_tuner:main',
         ],
     },
 )
