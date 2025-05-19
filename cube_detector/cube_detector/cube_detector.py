@@ -26,7 +26,6 @@ class CubeDetectorNode(Node):
         super().__init__('cube_detector')
     
         self.calibration_loaded = False
-        self.camera_info_received: bool = False
         
         # Subscribe to camera info topic to get camera parameters
         self.cam_info_subscriber = self.create_subscription(
@@ -51,6 +50,7 @@ class CubeDetectorNode(Node):
             'image_output',
             10)
         
+        # Publish cube poses
         self.cube_publisher = self.create_publisher(
             DetectedCubeArray,
             'detected_cubes',
@@ -68,7 +68,6 @@ class CubeDetectorNode(Node):
 
         # Unsubscribe after loading parameters
         self.calibration_loaded = True
-        self.camera_info_received = True # bekrefter mottatt info
 
         # stopper timer om den blir aktivert
         if hasattr(self, 'timer') and self.timer:
@@ -177,7 +176,7 @@ class CubeDetectorNode(Node):
         return image
     
     def check_camera_info(self):
-        if not self.camera_info_received:
+        if not self.calibration_loaded:
             self.get_logger().error(
                 'Camera info is not received for 10 sec; check camera connection.'
             )
