@@ -5,7 +5,7 @@ from rcl_interfaces.msg import SetParametersResult
 from cv_bridge import CvBridge
 from sensor_msgs.msg import CameraInfo
 import tf_transformations
-from cube_interfaces import DetectedCubeArray, DetectedCube
+from cube_interfaces.msg import DetectedCubeArray, DetectedCube
 import cv2 as cv
 import numpy as np
 
@@ -153,10 +153,10 @@ class CubeDetectorNode(Node):
                             cube.pose.position.x = float(tvec[0])
                             cube.pose.position.y = float(tvec[1])
                             cube.pose.position.z = float(tvec[2])
-                            cube.orientation.x = float(quat[0])
-                            cube.orientation.y = float(quat[1])
-                            cube.orientation.z = float(quat[2])
-                            cube.orientation.w = float(quat[3])
+                            cube.pose.orientation.x = float(quat[0])
+                            cube.pose.orientation.y = float(quat[1])
+                            cube.pose.orientation.z = float(quat[2])
+                            cube.pose.orientation.w = float(quat[3])
 
                             cube_msg.cubes.append(cube)
                             
