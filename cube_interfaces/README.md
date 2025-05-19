@@ -1,11 +1,23 @@
 # cube_interfaces
 
-This package defines custom message types for the cube_detector package.
+This package defines custom message types to interface with the cube_detector package.
 
 ## Messages
 
-- `ColorCube.msg`: Contains a cube's color, detection status and 3D pose.
-- `ColorCubeArray.msg`: An array of `ColorCube` messages with a shared header for frame and timestamp.
+- `DetectedCube.msg`: Contains a cube's color and 3D pose.
+- `DetectedCubeArray.msg`: An array of `DetectedCube` messages with a shared header for frame and timestamp.
+
+### DetectedCube.msg
+```
+string color
+geometry_msgs/Pose pose
+```
+
+### DetectedCubeArray.msg
+```
+cube_interfaces/DetectedCube[] cubes
+std_msgs/Header header
+```
 
 ## Dependencies
 
@@ -17,4 +29,5 @@ This package defines custom message types for the cube_detector package.
 Other packages can use:
 
 ```python
-from cube_interfaces.msg import ColorCube, ColorCubeArray
+from cube_interfaces.msg import DetectedCube, DetectedCubeArray
+```
