@@ -5,7 +5,7 @@ from rcl_interfaces.msg import SetParametersResult
 from cv_bridge import CvBridge
 from sensor_msgs.msg import CameraInfo
 import tf_transformations
-from cube_interfaces.msg import DetectedCubeArray, DetectedCube
+from cube_interfaces.msg import DetectedCubeArray, DetectedCube, ColorRangeArray
 import cv2 as cv
 import numpy as np
 
@@ -36,6 +36,13 @@ class CubeDetectorNode(Node):
         )
 
         self.timer = self.create_timer(10.0, self.check_camera_info)
+
+        # Subscribe to color topic
+        self.color_subsrber = self.create_subscription(
+            ColorRangeArray,
+            "colors",
+            self.color_callback,
+            10)
 
         # Subscribe to image topic
         self.img_subscriber = self.create_subscription(
@@ -76,6 +83,16 @@ class CubeDetectorNode(Node):
 
         self.destroy_subscription(self.cam_info_subscriber)
         self.get_logger().info("Camera parameters loaded, unsubscribing from /camera_info.")
+
+    def color_callback(self, msg):
+        #Update color ranges from topic
+        updated_colors = {}
+        for color in msg.colors:
+            lower = np.array(color.lower, dtype=np.uint8)
+            upper = np.array(color.upper, dtype=np.uint8)
+            updated_colors[color.name] = [lower,upper]
+        self.colors = updated_colors
+        self.get_logger().info("Updated the color set!")
 
     def image_callback(self, msg):
         # Abort if camera parameters not loaded

@@ -1,0 +1,18 @@
+- lower:
+  - 34
+  - 0
+  - 0
+  name: color_0
+  upper:
+  - 167
+  - 255
+  - 255
+- lower:
+  - 0
+  - 0
+  - 0
+  name: color_1
+  upper:
+  - 179
+  - 255
+  - 255

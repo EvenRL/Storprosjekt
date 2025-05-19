@@ -65,7 +65,7 @@ class ColorTuner(Node, QWidget):
             s = QSlider(Qt.Horizontal)
             s.setRange(0, 179 if i%3==0 else 255)
             s.setValue(0 if i<3 else s.maximum())
-            s.valueChanged.connect(self.publish_all)
+            s.sliderReleased.connect(self.publish_all)
             col.addWidget(s)
             row.addLayout(col)
             sliders.append(s)
@@ -106,7 +106,7 @@ class ColorTuner(Node, QWidget):
             cr.name = name.text()
             cr.lower = [int(sliders[i].value()) for i in range(3)]
             cr.upper = [int(sliders[i].value()) for i in range(3,6)]
-            arr.ranges.append(cr)
+            arr.colors.append(cr)
         self.pub.publish(arr)
 
     def load_file(self):
@@ -129,9 +129,11 @@ class ColorTuner(Node, QWidget):
             QMessageBox.critical(self, 'Error', str(e))
 
     def save_file(self):
-        path, _ = QFileDialog.getSaveFileName(self, 'Save HSV ranges', '', 'YAML Files (*.yaml)')
+        path, _ = QFileDialog.getSaveFileName(self, 'Save colors', '', 'YAML Files (*.yaml)')
         if not path:
             return
+        if not path.lower().endswith(('.yaml','.yml')):
+            path += '.yaml'
         try:
             out = []
             for name, sliders in self.entries:
