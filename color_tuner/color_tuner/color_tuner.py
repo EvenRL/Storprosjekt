@@ -110,7 +110,7 @@ class ColorTuner(Node, QWidget):
         self.pub.publish(arr)
 
     def load_file(self):
-        path, _ = QFileDialog.getOpenFileName(self, 'Load HSV ranges', '', 'YAML Files (*.yaml)')
+        path, _ = QFileDialog.getOpenFileName(self, 'Load colors', '', 'YAML Files (*.yaml)')
         if not path:
             return
         try:
