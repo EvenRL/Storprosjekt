@@ -1,0 +1,1 @@
+cube_interfaces/ColorRange[] colors
