@@ -3,7 +3,7 @@
 <package format="3">
   <name>cube_detector</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Detect colored cubes and publish estimated poses</description>
   <maintainer email="52103879+EvenRL@users.noreply.github.com">even</maintainer>
   <license>Apache-2.0</license>
 

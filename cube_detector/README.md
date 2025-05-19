@@ -7,7 +7,7 @@ This package contains a node for detecting and estimating the pose of colored cu
 ### `cube_detector.py`
 
 - Detects and estimates pose of colored cubes.
-- Publishes `ColorCubeArray` messages on the `/color_cubes` topic.
+- Publishes `DetectedCubeArray` messages on the `/detected_cubes` topic.
 - Each cube includes pose (in `camera_link`) and color metadata.
 
 ## Parameters
@@ -17,4 +17,3 @@ This package contains a node for detecting and estimating the pose of colored cu
 
 - `cube_interfaces`
 - `rclpy`
-- `geometry_msgs`
