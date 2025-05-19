@@ -5,7 +5,7 @@ from cube_interfaces.msg import ColorRange, ColorRangeArray
 
 from python_qt_binding.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QSlider, QPushButton, QLineEdit, QFileDialog,
+    QLabel, QPushButton, QLineEdit, QFileDialog,
     QMessageBox, QScrollArea, QSizePolicy, QSpinBox
 )
 from python_qt_binding.QtCore import Qt
@@ -19,7 +19,7 @@ class ColorTuner(Node, QWidget):
         QWidget.__init__(self)
         self.pub = self.create_publisher(ColorRangeArray, '/colors', 10)
 
-        self.entries = []  # list of (name_edit, [6 sliders])
+        self.entries = []  # list of (name_edit, [6 spinboxes])
         self.main_layout = QVBoxLayout()
 
         # Create Scroll area for dynamic list
@@ -55,54 +55,36 @@ class ColorTuner(Node, QWidget):
         idx = len(self.entries)
         row = QHBoxLayout()
         name = QLineEdit(f'color_{idx}')
-        name.setFixedWidth(80)
+        name.setFixedWidth(100)
         row.addWidget(name)
 
-        sliders = []
+        spinboxes = []
         for i, label in enumerate(['Hl','Sl','Vl','Hu','Su','Vu']):
             col = QVBoxLayout()
             col.addWidget(QLabel(label))
 
-            # create slider and spinbox
-            s = QSlider(Qt.Horizontal)
-            maximum = 179 if i % 3 == 0 else 255
-            s.setRange(0, maximum)
-            s.setValue(0 if i < 3 else maximum)
+            # create spinbox
+            sb = QSpinBox()
+            sb.setRange(0,179 if i % 3 == 0 else 255)
+            sb.setValue(0 if i < 3 else sb.maximum())
+            sb.setFixedWidth(60)
+            sb.editingFinished.connect(self.publish_all)
 
-            spin = QSpinBox()
-            spin.setRange(0, maximum)
-            spin.setValue(s.value())
-            spin.setFixedWidth(60)
-
-            s.valueChanged.connect(spin.setValue)
-            spin.valueChanged.connect(s.setValue)
-
-            s.sliderReleased.connect(self.publish_all)
-            spin.editingFinished.connect(self.publish_all)
-
-            sub = QHBoxLayout()
-            sub.addWidget(s,      stretch=1)
-            sub.addWidget(spin,    stretch=0)
-            col.addLayout(sub)
-
+            col.addWidget(sb)
             row.addLayout(col)
-            sliders.append((s, spin))
+            spinboxes.append(sb)
 
         self.container_layout.addLayout(row)
-        self.entries.append((name, sliders))
+        self.entries.append((name, spinboxes))
         self.publish_all()
 
     def remove_color(self):
         if not self.entries:
             return
         # remove last
-        for i in reversed(range(self.container_layout.count())):
-            item = self.container_layout.itemAt(i)
-            if i == self.container_layout.count()-1:
-                # take and delete all child widgets/layouts
-                self.clear_layout(item.layout())
-                self.container_layout.takeAt(i)
-                break
+        last_idx = self.container_layout.count() - 1
+        item = self.container_layout.takeAt(last_idx)
+        self.clear_layout(item.layout())
         self.entries.pop()
         self.publish_all()
 
@@ -119,11 +101,12 @@ class ColorTuner(Node, QWidget):
 
     def publish_all(self, *_):
         arr = ColorRangeArray()
-        for name, sliders in self.entries:
+        for name, spinboxes in self.entries:
             cr = ColorRange()
             cr.name = name.text()
-            cr.lower = [int(sliders[i].value()) for i in range(3)]
-            cr.upper = [int(sliders[i].value()) for i in range(3,6)]
+            values = [sb.value() for sb in spinboxes]
+            cr.lower = values[0:3]
+            cr.upper = values[3:6]
             arr.colors.append(cr)
         self.pub.publish(arr)
 
@@ -139,12 +122,14 @@ class ColorTuner(Node, QWidget):
                 self.remove_color()
             for item in data:
                 self.add_color()
-                name, sliders = self.entries[-1]
-                name.setText(item['name'])
-                for i, v in enumerate(item['lower']+item['upper']):
-                    sliders[i].setValue(v)
+                name, spinboxes = self.entries[-1]
+                name.setText(item.get('name',''))
+                lower = item.get('lower', [0,0,0])
+                upper = item.get('upper', [0,0,0])
+                for sb,v in zip(spinboxes, lower + upper):
+                    sb.setValue(int(v))
         except Exception as e:
-            QMessageBox.critical(self, 'Error', str(e))
+            QMessageBox.critical(self, 'Error loading file', str(e))
 
     def save_file(self):
         path, _ = QFileDialog.getSaveFileName(self, 'Save colors', '', 'YAML Files (*.yaml)')
@@ -154,15 +139,16 @@ class ColorTuner(Node, QWidget):
             path += '.yaml'
         try:
             out = []
-            for name, sliders in self.entries:
+            for name, spinboxes in self.entries:
+                values = [sb.value() for sb in spinboxes]
                 out.append({
                     'name':  name.text(),
-                    'lower': [s.value() for s in sliders[:3]],
-                    'upper': [s.value() for s in sliders[3:]],
+                    'lower': values[0:3],
+                    'upper': values[3:6],
                 })
             yaml.dump(out, open(path,'w'))
         except Exception as e:
-            QMessageBox.critical(self, 'Error', str(e))
+            QMessageBox.critical(self, 'Error saving file', str(e))
 
 def main():
     rclpy.init()
