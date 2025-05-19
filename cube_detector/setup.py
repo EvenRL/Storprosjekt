@@ -21,7 +21,7 @@ setup(
     zip_safe=True,
     maintainer='even',
     maintainer_email='52103879+EvenRL@users.noreply.github.com',
-    description='TODO: Package description',
+    description='Detect colored cubes and publish estimated poses',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
