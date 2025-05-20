@@ -4,13 +4,15 @@ from sensor_msgs.msg import Image
 from rcl_interfaces.msg import SetParametersResult
 from cv_bridge import CvBridge
 from sensor_msgs.msg import CameraInfo
+import tf_transformations
+from cube_interfaces.msg import DetectedCubeArray, DetectedCube, ColorRangeArray
 import cv2 as cv
 import numpy as np
 
 class CubeDetectorNode(Node):
     """
     Node for detecting and estimating pose of colored cubes.
-    Publishes poses of cubes in array with information like color and whether cube is detected or not.
+    Publishes poses of cubes in array of DetectedCubeArray in /detected_cubes topic.
     """
 
     # Colors to search for in hsv format
@@ -24,7 +26,7 @@ class CubeDetectorNode(Node):
         super().__init__('cube_detector')
     
         self.calibration_loaded = False
-
+        
         # Subscribe to camera info topic to get camera parameters
         self.cam_info_subscriber = self.create_subscription(
             CameraInfo,
@@ -32,6 +34,15 @@ class CubeDetectorNode(Node):
             self.camera_info_callback,
             10
         )
+
+        self.timer = self.create_timer(10.0, self.check_camera_info)
+
+        # Subscribe to color topic
+        self.color_subsrber = self.create_subscription(
+            ColorRangeArray,
+            "colors",
+            self.color_callback,
+            10)
 
         # Subscribe to image topic
         self.img_subscriber = self.create_subscription(
@@ -44,6 +55,12 @@ class CubeDetectorNode(Node):
         self.img_publisher = self.create_publisher(
             Image,
             'image_output',
+            10)
+        
+        # Publish cube poses
+        self.cube_publisher = self.create_publisher(
+            DetectedCubeArray,
+            'detected_cubes',
             10)
   
         # Initialize CVBridge
@@ -58,8 +75,24 @@ class CubeDetectorNode(Node):
 
         # Unsubscribe after loading parameters
         self.calibration_loaded = True
+
+        # stopper timer om den blir aktivert
+        if hasattr(self, 'timer') and self.timer:
+            self.timer.cancel()
+            self.timer = None
+
         self.destroy_subscription(self.cam_info_subscriber)
         self.get_logger().info("Camera parameters loaded, unsubscribing from /camera_info.")
+
+    def color_callback(self, msg):
+        #Update color ranges from topic
+        updated_colors = {}
+        for color in msg.colors:
+            lower = np.array(color.lower, dtype=np.uint8)
+            upper = np.array(color.upper, dtype=np.uint8)
+            updated_colors[color.name] = [lower,upper]
+        self.colors = updated_colors
+        self.get_logger().info("Updated the color set!")
 
     def image_callback(self, msg):
         # Abort if camera parameters not loaded
@@ -79,21 +112,27 @@ class CubeDetectorNode(Node):
 
         # Publish new image with cube poses drawn
         try:
-            cube_msg = self.bridge.cv2_to_imgmsg(new_image, "bgr8")
+            cube_img_msg = self.bridge.cv2_to_imgmsg(new_image, "bgr8")
         except Exception as e:
             self.get_logger().error('Failed to convert image: %s' % str(e))
             return
   
-        self.img_publisher.publish(cube_msg)
+        self.img_publisher.publish(cube_img_msg)
 
     def findCubePoses(self, image):
         """
-        Finds poses of cubes in the image
+        Finds and publishes poses of cubes in the image
 
         First each color is iterated and contours of that color within a certain size are found.
         If any contours look like a square the cube pose is estimated with PnP.
-        The estimated poses are then drawn on the image.
+        The estimated poses are then drawn on the image and published.
         """
+
+        # Configure cube array msg
+        cube_msg = DetectedCubeArray()
+        cube_msg.header.stamp = self.get_clock().now().to_msg()
+        cube_msg.header.frame_id = 'camera_link'
+
         square_points = np.array([[0,0,0],[0.05,0,0],[0.05,0.05,0],[0,0.05,0]], dtype=np.float32) # Define Square geometry to compare with contour, 5x5cm Square.
         cube_points = np.array([[0,0,0],[0.05,0,0],[0.05,0.05,0],[0,0.05,0],
                                 [0,0,-0.05],[0.05,0,-0.05],[0.05,0.05,-0.05],[0,0.05,-0.05]]) # Define Cube geometry, 5x5 Cube
@@ -126,11 +165,41 @@ class CubeDetectorNode(Node):
                             for i in range(4):
                                 cv.line(image, tuple(imgpts[i]), tuple(imgpts[i+4]), (0,255,0), 2)
                             cv.drawContours(image, [imgpts[4:]], -1, (0,0,255), 2)
+
+                            # Convert rot vector to quaternion
+                            rot_mat, _ = cv.Rodrigues(rvec) # Rodrigues vector to rotation matrix
+                            transform = np.eye(4) 
+                            transform[:3, :3] = rot_mat
+                            transform[:3,  3] = tvec.reshape(3)
+                            quat = tf_transformations.quaternion_from_matrix(transform)
+
+                            # Create cube message and populate array
+                            cube = DetectedCube()
+                            cube.color = name
+                            cube.pose.position.x = float(tvec[0])
+                            cube.pose.position.y = float(tvec[1])
+                            cube.pose.position.z = float(tvec[2])
+                            cube.pose.orientation.x = float(quat[0])
+                            cube.pose.orientation.y = float(quat[1])
+                            cube.pose.orientation.z = float(quat[2])
+                            cube.pose.orientation.w = float(quat[3])
+
+                            cube_msg.cubes.append(cube)
                             
                         else:
                             self.get_logger().warn(f"Pose estimation failed for color {name}")
 
+        self.cube_publisher.publish(cube_msg)
         return image
+    
+    def check_camera_info(self):
+        if not self.calibration_loaded:
+            self.get_logger().error(
+                'Camera info is not received for 10 sec; check camera connection.'
+            )
+        elif hasattr(self, 'timer') and self.timer:
+            self.timer.cancel()
+            self.timer = None
     
 # Initialize the node
 def main(args=None):

@@ -3,7 +3,7 @@
 <package format="3">
   <name>cube_interfaces</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Custom msgs for interfacing with the cube detection node</description>
   <maintainer email="52103879+EvenRL@users.noreply.github.com">even</maintainer>
   <license>Apache-2.0</license>
 
@@ -11,6 +11,7 @@
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
   <member_of_group>rosidl_interface_packages</member_of_group>
+  <depend>builtin_interfaces</depend>
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
 

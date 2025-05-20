@@ -1,28 +1,21 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>cube_detector</name>
+  <name>color_tuner</name>
   <version>0.0.0</version>
-  <description>Detect colored cubes and publish estimated poses</description>
+  <description>GUI for easy color tuning</description>
   <maintainer email="52103879+EvenRL@users.noreply.github.com">even</maintainer>
   <license>Apache-2.0</license>
-
-  <depend>rclpy</depend>
-  <depend>sensor_msgs</depend>
-  <depend>cv_bridge</depend>
-  <depend>opencv</depend>
-  <depend>rcl_interfaces</depend>
-  <depend>imutils</depend>
-  <depend>numpy</depend>
-  <depend>geometry_msgs</depend>
-  <depend>cube_interfaces</depend>
-  <depend>tf2_ros</depend>
-  <depend>tf_transformations</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
   <test_depend>python3-pytest</test_depend>
+
+  <depend>rclpy</depend>
+  <depend>python_qt_binding</depend>
+  <depend>PyYAML</depend>
+  <depend>cube_interfaces</depend>
 
   <export>
     <build_type>ament_python</build_type>

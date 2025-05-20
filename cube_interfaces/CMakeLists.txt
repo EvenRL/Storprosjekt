@@ -14,9 +14,13 @@ find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/ColorCube.msg"
-  "msg/ColorCubeArray.msg"
+  "msg/DetectedCube.msg"
+  "msg/DetectedCubeArray.msg"
+  "msg/ColorRange.msg"
+  "msg/ColorRangeArray.msg"
   DEPENDENCIES geometry_msgs std_msgs)
+
+ament_export_dependencies(rosidl_default_runtime)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

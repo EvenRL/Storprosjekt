@@ -96,7 +96,6 @@ class TaskManagerNode(Node):
         return response
 
     def robot_status_callback(self, msg):
-        
         if msg.data == "movement_complete":
             self.movement_complete = True
             self.handle_movement_complete()
@@ -104,7 +103,6 @@ class TaskManagerNode(Node):
             self.handle_robot_error(msg.data[6:])  # Extract error message
     
     def handle_robot_error(self, error_msg):
-
         self.get_logger().error(f"Robot error: {error_msg}")
         self.publish_status(f"ALERT: Robot error: {error_msg}")
         # Attempt recovery by returning to home position
@@ -112,7 +110,6 @@ class TaskManagerNode(Node):
         self.send_robot_command(f"move_joints:{self._format_position(self.home_position)}")
     
     def handle_movement_complete(self):
-
         self.movement_start_time = None  # Reset timeout timer
         
         if self.state == 'moving_home':
@@ -180,7 +177,6 @@ class TaskManagerNode(Node):
             self.detected_cubes = {}
     
     def handle_movement_timeout(self):
-
         self.get_logger().error(f"Movement timeout in state: {self.state}")
         self.publish_status(f"ALERT: Movement timeout in state: {self.state}")
         self.movement_start_time = None
@@ -212,7 +208,6 @@ class TaskManagerNode(Node):
                 self.search_index += 1
     
     def _handle_search_init(self):
-
         if self.search_index >= len(self.search_positions):
             self.publish_status(f"ALERT: Could not find all cubes. Missing: {', '.join(self.missing_colors)}")
             self.state = 'returning_home'
@@ -226,7 +221,6 @@ class TaskManagerNode(Node):
             self.movement_start_time = time.time()
     
     def point_to_cube(self, color):
-
         if color not in self.detected_cubes:
             self.get_logger().error(f"Cannot point to {color} cube - not detected")
             return
@@ -237,7 +231,6 @@ class TaskManagerNode(Node):
         self.movement_start_time = time.time()
     
     def start_task(self):
-
         self.state = 'moving_home'
         self.publish_status("Starting task")
         self.movement_complete = False
@@ -246,27 +239,22 @@ class TaskManagerNode(Node):
         self.missing_colors = []
     
     def send_robot_command(self, cmd):
-
         self.robot_cmd_pub.publish(self.create_string_msg(cmd))
     
     def publish_status(self, message):
-
         msg = self.create_string_msg(message)
         self.status_pub.publish(msg)
         self.get_logger().info(message)
     
     def create_string_msg(self, text):
-
         msg = String()
         msg.data = text
         return msg
     
     def _format_position(self, position):
-
         return ','.join(map(str, position))
     
     def cube_callback(self, msg):
-
         if self.state not in ['detecting_cubes', 'processing_search']:
             return
             
