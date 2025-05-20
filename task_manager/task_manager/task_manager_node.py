@@ -35,6 +35,16 @@ class TaskManagerNode(Node):
         # Main state machine timer
         self.create_timer(1.0, self.task_loop)
         self.get_logger().info('Task Manager node initialized')
+
+        # Sikkerhetssoner til roboten
+        self.safety_zones = {
+            'x_min': 0.0,
+            'x_max': 0.0,
+            'y_min': 0.0,
+            'y_max': 0.0,
+            'z_min': 0.0,
+            'z_max': 0.0,
+        },
     
     def cube_detection_callback(self, msg):
         """Process detected cubes from PoseArray."""
@@ -183,6 +193,14 @@ class TaskManagerNode(Node):
     def _format_position(self, position):
         """Format position array as comma-separated string."""
         return ','.join(map(str, position))
+    
+    def check_position_safety(self, position):
+        x, y, z = position
+        ou = self.safety_zones
+        return not (ou['x_min'] <= x <= ou['x_max'] and
+                    ou['y_min'] <= y <= ou['y_max'] and
+                    ou['z_min'] <= z <= ou['z_max']
+                    )
 
 def main(args=None):
     rclpy.init(args=args)
