@@ -28,7 +28,7 @@ uint8[3] lower
 uint8[3] upper
 ```
 
-### DetectedCubeArray.msg
+### ColorRangeArray.msg
 ```
 cube_interfaces/ColorRange[] colors
 ```
