@@ -1,6 +1,6 @@
 # Task Manager
 
-A ROS2 node for coordinating the detection and interaction with colored cubes using a robot arm ( work with ur3).
+A ROS2 node for coordinating the detection and interaction with colored cubes using a robot arm (works with UR3).
 
 ## Overview
 
@@ -9,6 +9,21 @@ The Task Manager node coordinates a robot's actions to:
 2. Process image data to detect green, blue, and black cubes
 3. Point to each detected cube in sequence
 4. Perform additional searches if some cubes are not initially detected
+## Directory Structure
+
+```
+task_manager/
+├── launch/
+│   └── task_manager.launch.py
+├── package.xml
+├── resource/
+│   └── task_manager
+├── setup.cfg
+├── setup.py
+└── task_manager/
+    ├── __init__.py
+    └── task_manager_node.py
+```
 
 ## Installation
 
@@ -42,30 +57,16 @@ The Task Manager node coordinates a robot's actions to:
 
 ## Usage
 
-
-
 ### Running the Node
-
-`task_manager` directory structure:
-
-task_manager/
-├── launch/
-│   └── task_manager.launch.py
-├── package.xml
-├── resource/
-│   └── task_manager
-├── setup.cfg
-├── setup.py
-└── task_manager/
-    ├── __init__.py
-    └── task_manager_node.py
 
 To start the Task Manager:
 
 ```bash
 ros2 run task_manager task_manager_node
 ```
-
+```bash
+ros2 launch task_manager task_manager.launch.py
+```
 ### Starting the Task
 
 The task can be started by publishing a message to the task_command topic:
@@ -112,6 +113,27 @@ The task manager implements a state machine with the following states:
 9. **processing_search**: Processing search results
 10. **returning_home**: Returning to home position
 11. **task_complete**: Task finished
+
+## Example Output
+
+When running the task manager, you should see output similar to this:
+
+```
+[INFO] [task_manager_node]: Task Manager node initialized
+[INFO] [task_manager_node]: System ready. Press 'Start' to begin task.
+[INFO] [task_manager_node]: Starting task
+[INFO] [task_manager_node]: Moving to home position
+[INFO] [task_manager_node]: Moving to overview position
+[INFO] [task_manager_node]: Capturing overview image
+[INFO] [task_manager_node]: Processing image to detect cubes
+[INFO] [task_manager_node]: Detected 3 cubes: green, blue, black
+[INFO] [task_manager_node]: All cubes detected! Beginning pointing sequence
+[INFO] [task_manager_node]: Pointing to green cube at (0.23, 0.14, 0.05)
+[INFO] [task_manager_node]: Pointing to blue cube at (0.18, -0.12, 0.05)
+[INFO] [task_manager_node]: Pointing to black cube at (0.27, 0.04, 0.05)
+[INFO] [task_manager_node]: Returning to home position
+[INFO] [task_manager_node]: Task completed! System ready for next task.
+```
 
 ## Configuration
 
