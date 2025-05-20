@@ -3,8 +3,9 @@ from rclpy.node import Node
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from geometry_msgs.msg import Pose
-from cube_interfaces.msg import ColorCubeArray, ColorCube
+from cube_interfaces.msg import DetectedCubeArray, DetectedCube  # Changed from ColorCubeArray, ColorCube
 import time
+
 
 class TaskManagerNode(Node):
     def __init__(self):
@@ -47,7 +48,7 @@ class TaskManagerNode(Node):
         self.search_index = 0
         self.movement_complete = False
         self.movement_start_time = None
-        self._active_timers = []  # Changed from 'timers' to '_active_timers' to avoid conflict
+        self._active_timers = []  # Changed from 'timers' to '_active_timers' 
         
         # Publishers and subscribers
         self.status_pub = self.create_publisher(String, 'task_status', 10)
@@ -55,7 +56,7 @@ class TaskManagerNode(Node):
         
         # Use ColorCubeArray message type from cube_interfaces
         self.cube_sub = self.create_subscription(
-            ColorCubeArray, 'detected_cubes', self.cube_callback, 10)
+            DetectedCubeArray, 'detected_cubes', self.cube_callback, 10)
             
         self.robot_status_sub = self.create_subscription(
             String, 'robot_status', self.robot_status_callback, 10)
@@ -75,13 +76,11 @@ class TaskManagerNode(Node):
         self.get_logger().info(f'Publishing to: task_status, robot_command')
     
     def create_one_shot_timer(self, timeout_sec, callback):
-        """Create a timer that will fire only once after the specified timeout"""
         timer = self.create_timer(timeout_sec, lambda: self._one_shot_callback(timer, callback))
         self._active_timers.append(timer)  # Changed from 'timers' to '_active_timers'
         return timer
         
     def _one_shot_callback(self, timer, callback):
-        """Execute the callback and cancel the timer"""
         # Cancel timer first to prevent any chance of it firing again
         timer.cancel()
         if timer in self._active_timers:  # Changed from 'timers' to '_active_timers'
@@ -90,7 +89,6 @@ class TaskManagerNode(Node):
         callback()
     
     def task_control_callback(self, request, response):
-        """Service callback to control tasks"""
         # Start the task (we could expand this with command in the request message)
         self.start_task()
         response.success = True
@@ -98,7 +96,7 @@ class TaskManagerNode(Node):
         return response
 
     def robot_status_callback(self, msg):
-        """Handle robot status updates."""
+        
         if msg.data == "movement_complete":
             self.movement_complete = True
             self.handle_movement_complete()
@@ -106,7 +104,7 @@ class TaskManagerNode(Node):
             self.handle_robot_error(msg.data[6:])  # Extract error message
     
     def handle_robot_error(self, error_msg):
-        """Handle robot error conditions"""
+
         self.get_logger().error(f"Robot error: {error_msg}")
         self.publish_status(f"ALERT: Robot error: {error_msg}")
         # Attempt recovery by returning to home position
@@ -114,7 +112,7 @@ class TaskManagerNode(Node):
         self.send_robot_command(f"move_joints:{self._format_position(self.home_position)}")
     
     def handle_movement_complete(self):
-        """Handle state transitions when robot movement completes."""
+
         self.movement_start_time = None  # Reset timeout timer
         
         if self.state == 'moving_home':
@@ -142,7 +140,6 @@ class TaskManagerNode(Node):
             self.state = 'task_complete'
     
     def task_loop(self):
-        """Main state machine for task execution."""
         # Check for movement timeout
         if self.movement_start_time and time.time() - self.movement_start_time > self.movement_timeout:
             self.handle_movement_timeout()
@@ -183,7 +180,7 @@ class TaskManagerNode(Node):
             self.detected_cubes = {}
     
     def handle_movement_timeout(self):
-        """Handle timeout during robot movement"""
+
         self.get_logger().error(f"Movement timeout in state: {self.state}")
         self.publish_status(f"ALERT: Movement timeout in state: {self.state}")
         self.movement_start_time = None
@@ -197,7 +194,6 @@ class TaskManagerNode(Node):
             lambda: self.send_robot_command(f"move_joints:{self._format_position(self.home_position)}"))
     
     def _check_detected_cubes(self):
-        """Check which cubes were detected and decide next action."""
         self.missing_colors = [c for c in self.required_colors if c not in self.detected_cubes]
         
         if not self.missing_colors:
@@ -216,7 +212,7 @@ class TaskManagerNode(Node):
                 self.search_index += 1
     
     def _handle_search_init(self):
-        """Initialize or continue the search for missing cubes."""
+
         if self.search_index >= len(self.search_positions):
             self.publish_status(f"ALERT: Could not find all cubes. Missing: {', '.join(self.missing_colors)}")
             self.state = 'returning_home'
@@ -230,7 +226,7 @@ class TaskManagerNode(Node):
             self.movement_start_time = time.time()
     
     def point_to_cube(self, color):
-        """Command robot to point at the specified cube"""
+
         if color not in self.detected_cubes:
             self.get_logger().error(f"Cannot point to {color} cube - not detected")
             return
@@ -241,7 +237,7 @@ class TaskManagerNode(Node):
         self.movement_start_time = time.time()
     
     def start_task(self):
-        """Start the cube detection and pointing task."""
+
         self.state = 'moving_home'
         self.publish_status("Starting task")
         self.movement_complete = False
@@ -250,27 +246,27 @@ class TaskManagerNode(Node):
         self.missing_colors = []
     
     def send_robot_command(self, cmd):
-        """Send command to the robot."""
+
         self.robot_cmd_pub.publish(self.create_string_msg(cmd))
     
     def publish_status(self, message):
-        """Publish status message."""
+
         msg = self.create_string_msg(message)
         self.status_pub.publish(msg)
         self.get_logger().info(message)
     
     def create_string_msg(self, text):
-        """Create a String message."""
+
         msg = String()
         msg.data = text
         return msg
     
     def _format_position(self, position):
-        """Format position array as comma-separated string."""
+
         return ','.join(map(str, position))
     
     def cube_callback(self, msg):
-        """Process detected cubes from ColorCubeArray message."""
+
         if self.state not in ['detecting_cubes', 'processing_search']:
             return
             
@@ -279,16 +275,14 @@ class TaskManagerNode(Node):
         
         # Process each cube in the array
         for cube in msg.cubes:
-            if cube.detected:
-                detected_colors.append(cube.color)
-                self.detected_cubes[cube.color] = {
-                    'pose': cube.pose,
-                    'position': (cube.pose.position.x, cube.pose.position.y, cube.pose.position.z)
-                }
-                self.get_logger().info(f"Detected {cube.color} cube at position: "
-                                      f"({cube.pose.position.x:.2f}, {cube.pose.position.y:.2f}, {cube.pose.position.z:.2f})")
-            else:
-                self.get_logger().info(f"Cube {cube.color} was NOT detected")
+            # Note: DetectedCube doesn't have 'detected' field, so we assume all cubes in the array are detected
+            detected_colors.append(cube.color)
+            self.detected_cubes[cube.color] = {
+                'pose': cube.pose,
+                'position': (cube.pose.position.x, cube.pose.position.y, cube.pose.position.z)
+            }
+            self.get_logger().info(f"Detected {cube.color} cube at position: "
+                                  f"({cube.pose.position.x:.2f}, {cube.pose.position.y:.2f}, {cube.pose.position.z:.2f})")
         
         # Find missing cubes by comparing with required colors
         missing_colors = [c for c in self.required_colors if c not in detected_colors]
