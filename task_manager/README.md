@@ -64,6 +64,9 @@ To start the Task Manager:
 ```bash
 ros2 run task_manager task_manager_node
 ```
+```bash
+ros2 launch task_manager task_manager.launch.py
+```
 
 ### Starting the Task
 
