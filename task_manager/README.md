@@ -67,7 +67,6 @@ ros2 run task_manager task_manager_node
 ```bash
 ros2 launch task_manager task_manager.launch.py
 ```
-
 ### Starting the Task
 
 The task can be started by publishing a message to the task_command topic:

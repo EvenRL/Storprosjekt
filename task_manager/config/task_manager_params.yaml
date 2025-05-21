@@ -1,7 +1,11 @@
 task_manager:
   ros__parameters:
     use_sim_time: false
-    home_position: [0.0, -1.57, 0.0, -1.57, 0.0, 0.0]
-    overview_position: [0.0, -1.0, 0.5, -1.0, 0.0, 0.0]
-    pointing_distance: 0.1
-    search_positions: [[0.3, -0.8, 0.5, -1.0, 0.0, 0.0], [-0.3, -0.8, 0.5, -1.0, 0.0, 0.0]]
+    home_position: [0.1, -1.4, 0.2, -1.2, 0.1, 0.0]
+    overview_position: [0.0, -1.0, 0.6, -1.0, 0.0, 0.0]
+    pointing_distance: 0.15
+    search_position_1: [0.3, -0.8, 0.5, -1.0, 0.0, 0.0]
+    search_position_2: [-0.3, -0.8, 0.5, -1.0, 0.0, 0.0]
+    num_search_positions: 2
+    required_colors: ['green', 'black', 'blue']
+    movement_timeout: 30.0
