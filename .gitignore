@@ -1,0 +1,12 @@
+# IDE files
+.idea/
+.vscode/
+nbproject/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
+/build
+/install
+/log
