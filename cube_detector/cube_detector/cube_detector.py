@@ -24,6 +24,17 @@ class CubeDetectorNode(Node):
 
     def __init__(self):
         super().__init__('cube_detector')
+
+        # Parameter declaration
+        self.declare_parameter('display_hsv_mask', False)
+        self.declare_parameter('draw_contours', False)
+        self.declare_parameter('draw_pose', True)
+        self.declare_parameter('draw_all_points', False)
+
+        self.display_hsv_mask = self.get_parameter('display_hsv_mask').value
+        self.draw_contours = self.get_parameter('draw_contours').value
+        self.draw_pose = self.get_parameter('draw_pose').value
+        self.draw_all_points = self.get_parameter('draw_all_points').value
     
         self.calibration_loaded = False
         
@@ -61,6 +72,12 @@ class CubeDetectorNode(Node):
         self.cube_publisher = self.create_publisher(
             DetectedCubeArray,
             'detected_cubes',
+            10)
+        
+        # Optional: Publish hsv mask
+        self.mask_publisher = self.create_publisher(
+            Image,
+            'hsv_mask',
             10)
   
         # Initialize CVBridge
@@ -107,6 +124,9 @@ class CubeDetectorNode(Node):
             self.get_logger().error('Failed to convert image: %s' % str(e))
             return
 
+        if self.display_hsv_mask:
+            self.displayHsvMask(cv_image)
+
         # Find cube poses
         new_image = self.findCubePoses(cv_image)
 
@@ -118,6 +138,22 @@ class CubeDetectorNode(Node):
             return
   
         self.img_publisher.publish(cube_img_msg)
+
+    def displayHsvMask(self, image):
+        '''
+        Publishes the hsv mask of the first color in the color set.
+        Intended for debugging.
+        '''
+        color = list(self.colors.keys())[0]
+        hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
+        mask = cv.inRange(hsv, self.colors[color][0], self.colors[color][1])
+        bgr_mask = cv.cvtColor(mask, cv.COLOR_HSV2BGR)
+        try:
+            mask_img_msg = self.bridge.cv2_to_imgmsg(bgr_mask, "bgr8")
+        except Exception as e:
+            self.get_logger().error('Failed to convert image: %s' % str(e))
+            return
+        self.mask_publisher.publish(mask_img_msg)
 
     def findCubePoses(self, image):
         """
