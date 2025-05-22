@@ -26,15 +26,15 @@ class CubeDetectorNode(Node):
         super().__init__('cube_detector')
 
         # Parameter declaration
-        self.declare_parameter('display_hsv_mask', False)
-        self.declare_parameter('draw_contours', False)
-        self.declare_parameter('draw_pose', True)
-        self.declare_parameter('draw_all_points', False)
+        self.declare_parameter('minArea', 2500) # Minimum contour area
+        self.declare_parameter('maxArea', 20000) # Maximum contour area
+        self.declare_parameter('debug', False) # Enable debug mode
+        self.declare_parameter('debug_draw_all_contours', True) # Draw all contours in debug mode
 
-        self.display_hsv_mask = self.get_parameter('display_hsv_mask').value
-        self.draw_contours = self.get_parameter('draw_contours').value
-        self.draw_pose = self.get_parameter('draw_pose').value
-        self.draw_all_points = self.get_parameter('draw_all_points').value
+        self.minArea = self.get_parameter('minArea').value
+        self.maxArea = self.get_parameter('maxArea').value
+        self.debug = self.get_parameter('debug').value
+        self.debug_draw_all_contours = self.get_parameter('debug_draw_all_contours').value
     
         self.calibration_loaded = False
         
@@ -72,12 +72,6 @@ class CubeDetectorNode(Node):
         self.cube_publisher = self.create_publisher(
             DetectedCubeArray,
             'detected_cubes',
-            10)
-        
-        # Optional: Publish hsv mask
-        self.mask_publisher = self.create_publisher(
-            Image,
-            'hsv_mask',
             10)
   
         # Initialize CVBridge
@@ -124,11 +118,12 @@ class CubeDetectorNode(Node):
             self.get_logger().error('Failed to convert image: %s' % str(e))
             return
 
-        if self.display_hsv_mask:
-            self.displayHsvMask(cv_image)
-
-        # Find cube poses
-        new_image = self.findCubePoses(cv_image)
+        if self.debug:
+            # Debug mode
+            new_image = self.debugMode(cv_image)
+        else:
+            # Find cube poses
+            new_image = self.findCubePoses(cv_image)
 
         # Publish new image with cube poses drawn
         try:
@@ -139,7 +134,7 @@ class CubeDetectorNode(Node):
   
         self.img_publisher.publish(cube_img_msg)
 
-    def displayHsvMask(self, image):
+    def debugMode(self, image):
         '''
         Publishes the hsv mask of the first color in the color set.
         Intended for debugging.
@@ -147,13 +142,27 @@ class CubeDetectorNode(Node):
         color = list(self.colors.keys())[0]
         hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
         mask = cv.inRange(hsv, self.colors[color][0], self.colors[color][1])
-        bgr_mask = cv.cvtColor(mask, cv.COLOR_HSV2BGR)
-        try:
-            mask_img_msg = self.bridge.cv2_to_imgmsg(bgr_mask, "bgr8")
-        except Exception as e:
-            self.get_logger().error('Failed to convert image: %s' % str(e))
-            return
-        self.mask_publisher.publish(mask_img_msg)
+        bgr_mask = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
+        cnts, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+        okContour = list() # Contours within area limits
+        oobContour = list() # Contours outside area limits
+
+        for cnt in cnts:
+            area = cv.contourArea(cnt)
+            if self.minArea < area < self.maxArea:
+                okContour.append(cnt)
+            else:
+                oobContour.append(cnt)
+        if okContour:
+            cv.drawContours(bgr_mask, okContour, -1, (0,255,0), 3)
+        if self.debug_draw_all_contours and oobContour:
+            cv.drawContours(bgr_mask, oobContour, -1, (0,0,255), 3)
+
+        return bgr_mask
+
+
+
 
     def findCubePoses(self, image):
         """
@@ -180,7 +189,7 @@ class CubeDetectorNode(Node):
             
             for cnt in cnts:
                 area = cv.contourArea(cnt)
-                if 2500 < area < 10000:
+                if self.minArea < area < self.maxArea:
                     epsilon = 0.05 * cv.arcLength(cnt, True)
                     approx = cv.approxPolyDP(cnt, epsilon, True)
 
