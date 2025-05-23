@@ -27,15 +27,25 @@ class CubeDetectorNode(Node):
 
         # Parameter declaration
         self.declare_parameter('minArea', 2500) # Minimum contour area
-        self.declare_parameter('maxArea', 20000) # Maximum contour area
+        self.declare_parameter('maxArea', 30000) # Maximum contour area
+        self.declare_parameter('alpha', 0.05) # Epsilon factor for contour approximation, % of contour perimeter
         self.declare_parameter('debug', False) # Enable debug mode
+        self.declare_parameter('debug_draw_contours', False) # Draw select contours in debug mode
         self.declare_parameter('debug_draw_all_contours', True) # Draw all contours in debug mode
+        self.declare_parameter('debug_draw_points', True) # Draw select points from poly approximation
+        self.declare_parameter('debug_draw_all_points', False) # Draw all points from poly approximation
+        self.declare_parameter('debug_draw_pose', False) # Draw estimated pose in debug mode
 
         self.minArea = self.get_parameter('minArea').value
         self.maxArea = self.get_parameter('maxArea').value
+        self.alpha = self.get_parameter('alpha').value
         self.debug = self.get_parameter('debug').value
+        self.debug_draw_contours = self.get_parameter('debug_draw_contours').value
         self.debug_draw_all_contours = self.get_parameter('debug_draw_all_contours').value
-    
+        self.debug_draw_points = self.get_parameter('debug_draw_points').value
+        self.debug_draw_all_points = self.get_parameter('debug_draw_all_points').value
+        self.debug_draw_pose = self.get_parameter('debug_draw_pose').value
+
         self.calibration_loaded = False
         
         # Subscribe to camera info topic to get camera parameters
@@ -136,17 +146,22 @@ class CubeDetectorNode(Node):
 
     def debugMode(self, image):
         '''
-        Publishes the hsv mask of the first color in the color set.
-        Intended for debugging.
+        This function is for debugging parameters and color values.
+        It allows the user to inspect every step of the cube detection process in real time.
+        The function only considers one color at a time, the first color in the color dictionary.
+        What the function displays can be configured with the ros parameters prefixed with debug_.
+        This function does not publish pose estimates to /detected_cubes topic.
         '''
         color = list(self.colors.keys())[0]
         hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
         mask = cv.inRange(hsv, self.colors[color][0], self.colors[color][1])
         bgr_mask = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
-        cnts, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-
+        
+        # Find and draw contours
         okContour = list() # Contours within area limits
         oobContour = list() # Contours outside area limits
+
+        cnts, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
         for cnt in cnts:
             area = cv.contourArea(cnt)
@@ -154,10 +169,51 @@ class CubeDetectorNode(Node):
                 okContour.append(cnt)
             else:
                 oobContour.append(cnt)
-        if okContour:
+        if okContour and (self.debug_draw_contours or self.debug_draw_all_contours):
             cv.drawContours(bgr_mask, okContour, -1, (0,255,0), 3)
         if self.debug_draw_all_contours and oobContour:
             cv.drawContours(bgr_mask, oobContour, -1, (0,0,255), 3)
+
+        if not self.debug_draw_all_contours:
+            cnts = okContour
+
+        # Find and draw poly approximations
+        for cnt in cnts:
+            epsilon = self.alpha * cv.arcLength(cnt, True)
+            approx = cv.approxPolyDP(cnt, epsilon, True)
+            if self.debug_draw_all_points:
+                corners = approx.reshape(-1,2)
+                for point in corners:
+                    cv.circle(bgr_mask, tuple(point), radius=5, color=(255,0,0), thickness=-1)
+                image_points = np.array(corners, dtype=np.float32)
+            
+            elif self.debug_draw_points:
+                if len(approx) == 4: # If rectangle (4 sides)
+                        corners = approx.reshape(-1,2)
+                        for point in corners:
+                            cv.circle(bgr_mask, tuple(point), radius=5, color=(255,0,0), thickness=-1)
+        
+        if self.debug_draw_pose:
+            square_points = np.array([[0,0,0],[0.05,0,0],[0.05,0.05,0],[0,0.05,0]], dtype=np.float32) # Define Square geometry to compare with contour, 5x5cm Square.
+            cube_points = np.array([[0,0,0],[0.05,0,0],[0.05,0.05,0],[0,0.05,0],
+                                    [0,0,-0.05],[0.05,0,-0.05],[0.05,0.05,-0.05],[0,0.05,-0.05]]) # Define Cube geometry, 5x5 Cube
+            for cnt in cnts:
+                epsilon = self.alpha * cv.arcLength(cnt, True)
+                approx = cv.approxPolyDP(cnt, epsilon, True)
+                if len(approx) == 4: # If rectangle (4 sides)
+                        corners = approx.reshape(-1,2)
+                        image_points = np.array(corners, dtype=np.float32)
+
+                        # Estimate pose
+                        success, rvec, tvec = cv.solvePnP(square_points, image_points, self.K, self.D)
+                        if success:
+                            imgpts, _ = cv.projectPoints(cube_points, rvec, tvec, self.K, self.D)
+                            imgpts = np.int32(imgpts).reshape(-1,2)
+
+                            cv.drawContours(bgr_mask,[imgpts[:4]], -1, (255,0,0), 2)
+                            for i in range(4):
+                                cv.line(bgr_mask, tuple(imgpts[i]), tuple(imgpts[i+4]), (0,255,0), 2)
+                            cv.drawContours(bgr_mask, [imgpts[4:]], -1, (0,0,255), 2)
 
         return bgr_mask
 
@@ -190,7 +246,7 @@ class CubeDetectorNode(Node):
             for cnt in cnts:
                 area = cv.contourArea(cnt)
                 if self.minArea < area < self.maxArea:
-                    epsilon = 0.05 * cv.arcLength(cnt, True)
+                    epsilon = self.alpha * cv.arcLength(cnt, True)
                     approx = cv.approxPolyDP(cnt, epsilon, True)
 
                     if len(approx) == 4: # If rectangle (4 sides)
