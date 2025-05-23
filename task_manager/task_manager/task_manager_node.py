@@ -2,9 +2,12 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
-from geometry_msgs.msg import Pose
-from cube_interfaces.msg import DetectedCubeArray, DetectedCube  # Changed from ColorCubeArray, ColorCube
+from geometry_msgs.msg import Pose,PoseStamped
+from rclpy.duration import Duration
+from cube_interfaces.msg import DetectedCubeArray, DetectedCube
 import time
+import tf2_ros
+import tf2_geometry_msgs
 
 
 class TaskManagerNode(Node):
@@ -31,6 +34,10 @@ class TaskManagerNode(Node):
         self.required_colors = self.get_parameter('required_colors').value
         self.movement_timeout = self.get_parameter('movement_timeout').value
         self.pointing_distance = self.get_parameter('pointing_distance').value
+
+        # Set up transform buffer
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
         
         # Reconstruct search positions list
         num_positions = self.get_parameter('num_search_positions').value
@@ -48,16 +55,17 @@ class TaskManagerNode(Node):
         self.search_index = 0
         self.movement_complete = False
         self.movement_start_time = None
-        self._active_timers = []  # Changed from 'timers' to '_active_timers' 
+        self._active_timers = [] 
         
         # Publishers and subscribers
         self.status_pub = self.create_publisher(String, 'task_status', 10)
         self.robot_cmd_pub = self.create_publisher(String, 'robot_command', 10)
         
-        # Use ColorCubeArray message type from cube_interfaces
+        # Setup cube subscriber
         self.cube_sub = self.create_subscription(
             DetectedCubeArray, 'detected_cubes', self.cube_callback, 10)
             
+        # Setup robot status subscriber
         self.robot_status_sub = self.create_subscription(
             String, 'robot_status', self.robot_status_callback, 10)
         
@@ -75,15 +83,27 @@ class TaskManagerNode(Node):
         self.get_logger().info(f'Subscribed to: detected_cubes')
         self.get_logger().info(f'Publishing to: task_status, robot_command')
     
+    def transformToBase(self, pose, header):
+        '''
+        Function to transform from camera frame to robot base frame.
+        '''
+        pose_cam = PoseStamped()
+        pose_cam.header = header
+        pose_cam.pose = pose
+
+        # Transform pose to base_link
+        pose_base = self.buffer.transform(pose_cam, 'base_link', timeout=Duration(seconds=1.0))
+        return pose_base
+
     def create_one_shot_timer(self, timeout_sec, callback):
         timer = self.create_timer(timeout_sec, lambda: self._one_shot_callback(timer, callback))
-        self._active_timers.append(timer)  # Changed from 'timers' to '_active_timers'
+        self._active_timers.append(timer)
         return timer
         
     def _one_shot_callback(self, timer, callback):
         # Cancel timer first to prevent any chance of it firing again
         timer.cancel()
-        if timer in self._active_timers:  # Changed from 'timers' to '_active_timers'
+        if timer in self._active_timers:
             self._active_timers.remove(timer)
         # Call the original callback
         callback()
@@ -225,16 +245,13 @@ class TaskManagerNode(Node):
             self.get_logger().error(f"Cannot point to {color} cube - not detected")
             return
             
-        position = self.detected_cubes[color]['position']
-        
-        #try:
-        #    pose_base = tf2_utils.pose(self, position)
-        #except Exception as e:
-        #    self.get_logger().error(f"TF-feil: {e}")
+        pose_cam = self.detected_cubes[color]['pose']
 
+        pose_base = self.transformToBase(pose_cam, self.cube_header)
+        position = pose_base.position
         
         self.publish_status(f"Pointing to {color} cube at {position}")
-        self.send_robot_command(f"point_to:{position[0]},{position[1]},{position[2]},{self.pointing_distance}")
+        self.send_robot_command(f"point_to:{position.x},{position.y},{position.z},{self.pointing_distance}")
         self.movement_start_time = time.time()
     
     def start_task(self):
@@ -267,10 +284,10 @@ class TaskManagerNode(Node):
             
         self.detected_cubes = {}
         detected_colors = []
+        self.cube_header = msg.header
         
         # Process each cube in the array
         for cube in msg.cubes:
-            # Note: DetectedCube doesn't have 'detected' field, so we assume all cubes in the array are detected
             detected_colors.append(cube.color)
             self.detected_cubes[cube.color] = {
                 'pose': cube.pose,
