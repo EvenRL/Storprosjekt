@@ -226,6 +226,13 @@ class TaskManagerNode(Node):
             return
             
         position = self.detected_cubes[color]['position']
+        
+        #try:
+        #    pose_base = tf2_utils.pose(self, position)
+        #except Exception as e:
+        #    self.get_logger().error(f"TF-feil: {e}")
+
+        
         self.publish_status(f"Pointing to {color} cube at {position}")
         self.send_robot_command(f"point_to:{position[0]},{position[1]},{position[2]},{self.pointing_distance}")
         self.movement_start_time = time.time()
