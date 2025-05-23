@@ -12,7 +12,7 @@ import numpy as np
 class CubeDetectorNode(Node):
     """
     Node for detecting and estimating pose of colored cubes.
-    Publishes poses of cubes in array of DetectedCubeArray in /detected_cubes topic.
+    Publishes poses of cubes in array of type DetectedCubeArray in /detected_cubes topic.
     """
 
     # Colors to search for in hsv format
@@ -47,6 +47,7 @@ class CubeDetectorNode(Node):
         self.debug_draw_pose = self.get_parameter('debug_draw_pose').value
 
         self.calibration_loaded = False
+        self.frame_id = 'camera_frame'
         
         # Subscribe to camera info topic to get camera parameters
         self.cam_info_subscriber = self.create_subscription(
@@ -193,6 +194,7 @@ class CubeDetectorNode(Node):
                         for point in corners:
                             cv.circle(bgr_mask, tuple(point), radius=5, color=(255,0,0), thickness=-1)
         
+        # Draw pose
         if self.debug_draw_pose:
             square_points = np.array([[0,0,0],[0.05,0,0],[0.05,0.05,0],[0,0.05,0]], dtype=np.float32) # Define Square geometry to compare with contour, 5x5cm Square.
             cube_points = np.array([[0,0,0],[0.05,0,0],[0.05,0.05,0],[0,0.05,0],
@@ -232,7 +234,7 @@ class CubeDetectorNode(Node):
         # Configure cube array msg
         cube_msg = DetectedCubeArray()
         cube_msg.header.stamp = self.get_clock().now().to_msg()
-        cube_msg.header.frame_id = 'camera_link'
+        cube_msg.header.frame_id = self.frame_id
 
         square_points = np.array([[0,0,0],[0.05,0,0],[0.05,0.05,0],[0,0.05,0]], dtype=np.float32) # Define Square geometry to compare with contour, 5x5cm Square.
         cube_points = np.array([[0,0,0],[0.05,0,0],[0.05,0.05,0],[0,0.05,0],
