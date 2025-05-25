@@ -155,18 +155,18 @@ class CubeDetectorNode(Node):
     def sortCorners(self, corners):
         '''
         Order the points from poly approximation to make the following solvePnP function more stable.
-        Order is: top left, top right, bottom right, bottom left.
+        Order is: bottom left, bottom right, top right, top left.
         '''
-        sorted_points = np.zeros((4,2), dtype=np.float32)
+        sorted_points = np.zeros((4,2), dtype=int)
 
         sum = corners.sum(axis=1)
         difference = corners[:,0] - corners[:,1]
 
-        sorted_points[0] = corners[np.argmin(sum)] # Top left is smallest sum x + y
-        sorted_points[1] = corners[np.argmax(difference)] # Top right is biggest difference x - y
-        sorted_points[3] = corners[np.argmax(sum)] # Bottom right is biggest sum x + y
-        sorted_points[4] = corners[np.argmin(difference)] # Bottom left is smallest difference x - y
-
+        sorted_points[0] = corners[np.argmin(difference)] # Bottom left is smallest difference x - y
+        sorted_points[1] = corners[np.argmax(sum)] # Bottom right is biggest sum x + y
+        sorted_points[2] = corners[np.argmax(difference)] # Top right is biggest difference x - y
+        sorted_points[3] = corners[np.argmin(sum)] # Top left is smallest sum x + y
+        
         return sorted_points
 
 
@@ -234,7 +234,7 @@ class CubeDetectorNode(Node):
                         image_points = np.array(corners, dtype=np.float32)
 
                         # Estimate pose
-                        success, rvec, tvec = cv.solvePnP(square_points, image_points, self.K, self.D)
+                        success, rvec, tvec, inliers = cv.solvePnPRansac(square_points, image_points, self.K, self.D, reprojectionError=8.0, confidence=0.99, flags=cv.SOLVEPNP_ITERATIVE)
                         if success:
                             imgpts, _ = cv.projectPoints(cube_points, rvec, tvec, self.K, self.D)
                             imgpts = np.int32(imgpts).reshape(-1,2)
@@ -285,7 +285,7 @@ class CubeDetectorNode(Node):
                         image_points = np.array(corners, dtype=np.float32)
 
                         # Estimate pose
-                        success, rvec, tvec = cv.solvePnP(square_points, image_points, self.K, self.D)
+                        success, rvec, tvec, inliers = cv.solvePnPRansac(square_points, image_points, self.K, self.D, reprojectionError=8.0, confidence=0.99, flags=cv.SOLVEPNP_ITERATIVE)
 
                         if success:
                             imgpts, _ = cv.projectPoints(cube_points, rvec, tvec, self.K, self.D)
