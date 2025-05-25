@@ -29,6 +29,8 @@ class CubeDetectorNode(Node):
         self.declare_parameter('minArea', 2500) # Minimum contour area
         self.declare_parameter('maxArea', 30000) # Maximum contour area
         self.declare_parameter('alpha', 0.05) # Epsilon factor for contour approximation, % of contour perimeter
+        self.declare_parameter('enableBlur', False) # Enables preprocessing image with gaussian blur
+        self.declare_parameter('blurKernelSize', 5) # Kernel size for gaussian blur
         self.declare_parameter('debug', False) # Enable debug mode
         self.declare_parameter('debug_draw_contours', False) # Draw select contours in debug mode
         self.declare_parameter('debug_draw_all_contours', True) # Draw all contours in debug mode
@@ -39,6 +41,8 @@ class CubeDetectorNode(Node):
         self.minArea = self.get_parameter('minArea').value
         self.maxArea = self.get_parameter('maxArea').value
         self.alpha = self.get_parameter('alpha').value
+        self.enableBlur = self.get_parameter('enableBlur').value
+        self.blurKernelSize = self.get_parameter('blurKernelSize').value
         self.debug = self.get_parameter('debug').value
         self.debug_draw_contours = self.get_parameter('debug_draw_contours').value
         self.debug_draw_all_contours = self.get_parameter('debug_draw_all_contours').value
@@ -128,6 +132,9 @@ class CubeDetectorNode(Node):
         except Exception as e:
             self.get_logger().error('Failed to convert image: %s' % str(e))
             return
+
+        if self.enableBlur:
+            cv_image = cv.blur(cv_image,(self.blurKernelSize,self.blurKernelSize))
 
         if self.debug:
             # Debug mode
