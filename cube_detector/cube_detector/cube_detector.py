@@ -50,6 +50,17 @@ class CubeDetectorNode(Node):
         self.debug_draw_all_points = self.get_parameter('debug_draw_all_points').value
         self.debug_draw_pose = self.get_parameter('debug_draw_pose').value
 
+        ##### Testing ######
+        self.declare_parameter('preprocess.method', 'clahe')   # 'none' | 'hist' | 'clahe' | 'lab' | 'grayworld'
+        self.declare_parameter('clahe.clip_limit', 2.0)
+        self.declare_parameter('clahe.tile_size', 8)
+
+        self.preproc_method = self.get_parameter('preprocess.method').get_parameter_value().string_value
+        self.clahe_clip    = self.get_parameter('clahe.clip_limit').value
+        self.clahe_tile    = self.get_parameter('clahe.tile_size').value
+
+        ####################
+
         self.calibration_loaded = False
         self.frame_id = 'camera_frame'
         
@@ -92,6 +103,51 @@ class CubeDetectorNode(Node):
         # Initialize CVBridge
         self.bridge = CvBridge()
 
+    ##### TESTING ###########
+    def colour_preprocess(self, img_bgr: np.ndarray) -> np.ndarray:
+        """Return a normalised BGR image according to the chosen method."""
+        method = self.preproc_method.lower()
+
+        if method == 'none':
+            return img_bgr
+
+        if method == 'grayworld':
+            # simple Gray-World WB
+            img = img_bgr.astype(np.float32)
+            avg_b, avg_g, avg_r = [np.mean(img[:,:,c]) for c in range(3)]
+            avg_gray = (avg_b + avg_g + avg_r) / 3.0
+            gain = [avg_gray/x for x in (avg_b, avg_g, avg_r)]
+            wb = cv.merge([(img[:,:,0]*gain[0]),
+                           (img[:,:,1]*gain[1]),
+                           (img[:,:,2]*gain[2])])
+            return np.clip(wb, 0, 255).astype(np.uint8)
+
+        if method in ('hist', 'clahe'):
+            hsv = cv.cvtColor(img_bgr, cv.COLOR_BGR2HSV)
+            v    = hsv[:,:,2]
+
+            if method == 'hist':
+                v_eq = cv.equalizeHist(v)
+            else:  # CLAHE
+                clahe = cv.createCLAHE(clipLimit=self.clahe_clip,
+                                       tileGridSize=(self.clahe_tile,
+                                                     self.clahe_tile))
+                v_eq = clahe.apply(v)
+
+            hsv[:,:,2] = v_eq
+            return cv.cvtColor(hsv, cv.COLOR_HSV2BGR)
+
+        if method == 'lab':
+            lab = cv.cvtColor(img_bgr, cv.COLOR_BGR2LAB)
+            l,a,b = cv.split(lab)
+            l_eq  = cv.equalizeHist(l)
+            lab_eq = cv.merge((l_eq,a,b))
+            return cv.cvtColor(lab_eq, cv.COLOR_LAB2BGR)
+
+        # fallback
+        return img_bgr
+    #####################
+
     def camera_info_callback(self, msg):
         self.get_logger().info(f"Loading camera parameters...")
 
@@ -128,7 +184,9 @@ class CubeDetectorNode(Node):
         
         # Attempt to retrieve image
         try:
-            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8") # Convert image from ros2 format to opencv format
+            #cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8") # Convert image from ros2 format to opencv format
+            cv_image_raw = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+            cv_image     = self.colour_preprocess(cv_image_raw)
         except Exception as e:
             self.get_logger().error('Failed to convert image: %s' % str(e))
             return
