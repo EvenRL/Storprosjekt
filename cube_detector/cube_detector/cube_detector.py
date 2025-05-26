@@ -169,9 +169,6 @@ class CubeDetectorNode(Node):
         
         return sorted_points
 
-
-
-
     def debugMode(self, image):
         '''
         This function is for debugging parameters and color values.
@@ -218,8 +215,11 @@ class CubeDetectorNode(Node):
             elif self.debug_draw_points:
                 if len(approx) == 4: # If rectangle (4 sides)
                         corners = self.sortCorners(approx.reshape(-1,2))
+                        i = 0
                         for point in corners:
+                            i += 1
                             cv.circle(bgr_mask, tuple(point), radius=5, color=(255,0,0), thickness=-1)
+                            cv.putText(bgr_mask, str(i), tuple(point), cv.FONT_HERSHEY_SIMPLEX, 1, color=(255,255,255))
         
         # Draw pose
         if self.debug_draw_pose:
