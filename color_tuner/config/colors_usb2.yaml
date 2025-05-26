@@ -1,0 +1,27 @@
+- lower:
+  - 90
+  - 50
+  - 70
+  name: blue
+  upper:
+  - 128
+  - 255
+  - 255
+- lower:
+  - 36
+  - 50
+  - 70
+  name: green
+  upper:
+  - 89
+  - 255
+  - 255
+- lower:
+  - 159
+  - 80
+  - 70
+  name: red
+  upper:
+  - 179
+  - 255
+  - 255
