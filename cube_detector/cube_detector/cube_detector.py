@@ -50,7 +50,7 @@ class CubeDetectorNode(Node):
         self.debug_draw_all_points = self.get_parameter('debug_draw_all_points').value
         self.debug_draw_pose = self.get_parameter('debug_draw_pose').value
 
-        ##### Testing ######
+        ##### PREPROCESS Testing ######
         self.declare_parameter('clahe_clip_limit', 2.0)
         self.declare_parameter('clahe_tile_size', 8)
 
@@ -101,7 +101,7 @@ class CubeDetectorNode(Node):
         # Initialize CVBridge
         self.bridge = CvBridge()
 
-    ##### TESTING ###########
+    ##### PREPROCESS TESTING ###########
     def colour_preprocess(self, img_bgr: np.ndarray) -> np.ndarray:
         """Return a normalised BGR image using clahe method."""
         hsv = cv.cvtColor(img_bgr, cv.COLOR_BGR2HSV)
@@ -294,13 +294,36 @@ class CubeDetectorNode(Node):
         hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV) # Create image copy in hsv format
         for name, clr in self.colors.items():
             mask = cv.inRange(hsv, clr[0], clr[1]) # Create mask of identified color
+
+            ##### CONTOUR ROBUSTNESS TESTING #####
+            kernel_open  = cv.getStructuringElement(cv.MORPH_RECT, (3,3))
+            kernel_close = cv.getStructuringElement(cv.MORPH_RECT, (5,5))
+            mask = cv.morphologyEx(mask, cv.MORPH_OPEN,  kernel_open)
+            mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, kernel_close)
+            ######################################
+
             cnts, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
             
             for cnt in cnts:
                 area = cv.contourArea(cnt)
                 if self.minArea < area < self.maxArea:
-                    epsilon = self.alpha * cv.arcLength(cnt, True)
-                    approx = cv.approxPolyDP(cnt, epsilon, True)
+                    #epsilon = self.alpha * cv.arcLength(cnt, True)
+                    #approx = cv.approxPolyDP(cnt, epsilon, True)
+                    ##### CONTOUR ROBUSTNESS TESTING ########
+                    hull      = cv.convexHull(cnt)
+                    solidity  = area / float(cv.contourArea(hull))
+                    x,y,w,h   = cv.boundingRect(cnt)
+                    extent    = area / float(w*h)
+                    aspect    = w / float(h)
+
+                    if solidity < 0.90:         continue  # ragged or concave
+                    if extent   < 0.70:         continue  # holes / glare
+                    if not 0.6 < aspect < 1.4:  continue  # too elongated
+
+                    peri   = cv.arcLength(cnt, True)
+                    eps    = max(3.0, 0.02 * peri)
+                    approx = cv.approxPolyDP(cnt, eps, True)
+                    ##########################################
 
                     if len(approx) == 4: # If rectangle (4 sides)
                         corners = self.sortCorners(approx.reshape(-1,2))
