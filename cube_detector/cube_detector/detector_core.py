@@ -69,7 +69,7 @@ def findCubePoses(image: np.ndarray, colors: dict, K: np.ndarray, D: np.ndarray,
 
         # Draw contours
         if drawContours:
-            overlay = DrawContours(overlay, cnts, minArea, maxArea)
+            overlay = DrawContours(overlay, cnts, minArea, maxArea, shapeCheck)
         
         for cnt in cnts:
             # Check area
