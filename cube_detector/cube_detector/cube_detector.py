@@ -1,5 +1,5 @@
 import rclpy
-from rclpy.node import Node, NodeOptions
+from rclpy.node import Node
 from sensor_msgs.msg import Image
 from rcl_interfaces.msg import SetParametersResult
 from cv_bridge import CvBridge
@@ -9,7 +9,7 @@ from cube_interfaces.msg import DetectedCubeArray, DetectedCube, ColorRangeArray
 import cv2 as cv
 import numpy as np
 
-from detector_core import findCubePoses
+from cube_detector.detector_core import findCubePoses
 
 class CubeDetectorNode(Node):
     '''
@@ -23,11 +23,9 @@ class CubeDetectorNode(Node):
         'yellow': [np.array([25, 50, 70]), np.array([35, 255, 255])],
         'green': [np.array([36, 50, 70]), np.array([89, 255, 255])],
         'black': [np.array([0,0,0]), np.array([180,255,30])]}
-    
-    opts = NodeOptions(automatically_declare_parameters_from_overrides=True)
 
     def __init__(self):
-        super().__init__('cube_detector', options=opts)
+        super().__init__('cube_detector', allow_undeclared_parameters=True, automatically_declare_parameters_from_overrides=True)
 
         self.calibration_loaded = False
         self.frame_id = 'camera_frame'
@@ -158,7 +156,7 @@ class CubeDetectorNode(Node):
             rot_mat,_ = cv.Rodrigues(np.array(cube["rvec"])) # Rodrigues vector to rotation matrix
             transform = np.eye(4) 
             transform[:3, :3] = rot_mat
-            transform[:3,  3] = tvec.reshape(3)
+            transform[:3, 3] = np.array(tvec).reshape(3)
             quat = tf_transformations.quaternion_from_matrix(transform)
 
             dc = DetectedCube()
