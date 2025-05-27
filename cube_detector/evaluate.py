@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import cv2 as cv, yaml, glob, csv, time, pathlib, numpy as np
-from detector_core import findCubePoses
+from cube_detector.detector_core import findCubePoses
 
 def load_calib(yaml_file):
     data = yaml.safe_load(open(yaml_file))
@@ -16,7 +16,7 @@ def main():
     root = pathlib.Path(__file__).resolve().parent
     imgs   = sorted((root/"test_images").glob("*.png"))
     param_files = sorted((root/"config"/"detect_params").glob("*.yaml"))
-    K, D  = load_calib(root/"config"/"camera_info_pc.yaml")
+    K, D  = load_calib(root/"config"/"camera_info_usb2.yaml")
 
     (root/"results").mkdir(exist_ok=True)
     csv_path = root/"results"/"metrics.csv"

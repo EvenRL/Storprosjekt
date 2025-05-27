@@ -133,6 +133,7 @@ class CubeDetectorNode(Node):
           'drawPoints': self.get_parameter('drawPoints').value,
           'drawPointOrder': self.get_parameter('drawPointOrder').value,
           'drawPose': self.get_parameter('drawPose').value,
+          'shapeCheck': self.get_parameter('shapeCheck').value,
           'minSolidity': self.get_parameter('minSolidity').value,
           'minExtent': self.get_parameter('minExtent').value,
           'minAspect': self.get_parameter('minAspect').value,

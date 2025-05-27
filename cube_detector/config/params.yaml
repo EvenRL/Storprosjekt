@@ -18,6 +18,7 @@ cube_detector:
     drawPoints: true
     drawPointOrder: false
     drawPose: true
+    shapeCheck: true
     minSolidity: 0.9
     minExtent: 0.7
     minAspect: 0.6

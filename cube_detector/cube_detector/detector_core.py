@@ -21,6 +21,7 @@ def findCubePoses(image: np.ndarray, colors: dict, K: np.ndarray, D: np.ndarray,
     drawPoints = params.get('drawPoints', True) # Draw found points on overlay
     drawPointOrder = params.get('drawPointOrder', False) # Draw point order on overlay, 1 bl, 2 br, 3 tr, 4 tl
     drawPose = params.get('drawPose', True) # Draw estimated pose on overlay
+    shapeCheck = params.get('shapeCheck', True) # Check contour shape
     minSolidity = params.get('minSolidity', 0.9) # Minimum contour solidity
     minExtent = params.get('minExtent', 0.7) # Minimum contour extent
     minAspect = params.get('minAspect', 0.6) # Minimum contour aspect ratio
@@ -76,14 +77,15 @@ def findCubePoses(image: np.ndarray, colors: dict, K: np.ndarray, D: np.ndarray,
             if not minArea < area < maxArea: continue
 
             # Check for odd shapes
-            hull = cv.convexHull(cnt)
-            solidity = area / float(cv.contourArea(hull))
-            x,y,w,h = cv.boundingRect(cnt)
-            extent = area / float(w*h)
-            aspect = w / float(h)
-            if solidity < minSolidity:         continue  # ragged or concave
-            if extent   < minExtent:         continue  # holes / glare
-            if not minAspect < aspect < maxAspect:  continue  # too elongated
+            if shapeCheck:
+                hull = cv.convexHull(cnt)
+                solidity = area / float(cv.contourArea(hull))
+                x,y,w,h = cv.boundingRect(cnt)
+                extent = area / float(w*h)
+                aspect = w / float(h)
+                if solidity < minSolidity:         continue  # ragged or concave
+                if extent   < minExtent:         continue  # holes / glare
+                if not minAspect < aspect < maxAspect:  continue  # too elongated
 
             # Approximate shape of contour
             peri   = cv.arcLength(cnt, True)
@@ -133,20 +135,26 @@ def PreprocessImage(img_bgr: np.ndarray, claheClip, claheTile) -> np.ndarray:
     hsv[:,:,2] = v_eq
     return cv.cvtColor(hsv, cv.COLOR_HSV2BGR)
 
-def DrawContours(image, cnts, min, max):
+def DrawContours(image, cnts, min, max, shapeCheck):
     okContour = list() # Contours within area limits
     oobContour = list() # Contours outside area limits
     for cnt in cnts:
         area = cv.contourArea(cnt)
-        hull = cv.convexHull(cnt)
-        solidity = area / float(cv.contourArea(hull))
-        x,y,w,h = cv.boundingRect(cnt)
-        extent = area / float(w*h)
-        aspect = w / float(h)
-        if (min < area < max) and (solidity < 0.9) and (extent < 0.70) and not (0.6 < aspect < 1.4):
-            okContour.append(cnt)
+        if shapeCheck:
+            hull = cv.convexHull(cnt)
+            solidity = area / float(cv.contourArea(hull))
+            x,y,w,h = cv.boundingRect(cnt)
+            extent = area / float(w*h)
+            aspect = w / float(h)
+            if (min < area < max) and (solidity < 0.9) and (extent < 0.70) and not (0.6 < aspect < 1.4):
+                okContour.append(cnt)
+            else:
+                oobContour.append(cnt)
         else:
-            oobContour.append(cnt)
+            if min < area < max:
+                okContour.append(cnt)
+            else:
+                oobContour.append(cnt)
     cv.drawContours(image, okContour, -1, (0,255,0), 3)
     cv.drawContours(image, oobContour, -1, (0,0,255), 3)
     return image
