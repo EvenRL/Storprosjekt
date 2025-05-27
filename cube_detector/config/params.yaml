@@ -14,7 +14,7 @@ cube_detector:
     claheClip: 2.0
     claheTile: 8
     maskCleanup: true
-    drawContours: false
+    drawContours: true
     drawPoints: true
     drawPointOrder: false
     drawPose: true
