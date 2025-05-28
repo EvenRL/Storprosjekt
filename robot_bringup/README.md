@@ -7,15 +7,15 @@ This package launches the full robot system including cube detection, task manag
 ### `bringup.launch.py`
 
 Launches:
+- Static transform from camera frame to tool frame
 - Cube detection node
 - Task manager node
-- Robot controller node
 
 ## Dependencies
 
 - `cube_detection`
 - `task_manager`
-- `robot_controller`
+- `tf2`
 
 ## Usage
 
