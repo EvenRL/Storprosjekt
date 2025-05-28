@@ -44,5 +44,9 @@ def generate_launch_description():
                     'detect.launch.py'
                 ])
             ])
+        ),
+        Node(
+            package='task_manager',
+            executable='task_manager_node'
         )
     ])
