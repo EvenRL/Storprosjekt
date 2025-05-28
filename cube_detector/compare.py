@@ -5,6 +5,10 @@ import matplotlib.image as mpimg
 from pathlib import Path
 import math
 
+#########
+# Script for easily comparing results from evaluate.py. Loads images from /results and displays in a grid for comparison.
+#########
+
 # Configure project paths
 root = Path("results")
 if not root.exists():
@@ -14,7 +18,7 @@ param_dirs = sorted([d for d in root.iterdir() if d.is_dir()])
 variants = [d.name for d in param_dirs]
 images = {d.name: sorted(list(d.glob("*.png"))) for d in param_dirs}
 
-# Determine grid size (square-ish)
+# Determine grid size
 n = len(variants)
 n_cols = math.ceil(math.sqrt(n))
 n_rows = math.ceil(n / n_cols)
@@ -53,5 +57,5 @@ def on_key(event):
 
 fig.canvas.mpl_connect('key_press_event', on_key)
 show_frame(frame_idx)
-plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # leave space for title
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 plt.show()

@@ -4,7 +4,7 @@ cube_detector:
     minArea: 2500
     maxArea: 30000
     alpha: 0.05
-    morphOpen: 3
+    morphOpen: 60
     morphClose: 5
     reprojMax: 8.0
     enableBlur: true

@@ -4,11 +4,15 @@ hsv:
   green:  [[36,50,70],  [89,255,255]]
   black:  [[0,0,0],     [180,255,30]]
 
+cannyMin: 40
+cannyMax: 100
+displayCannyMask: false
+drawColor: true
 cubeSize: 0.05
 minArea: 2500
 maxArea: 30000
 alpha: 0.05
-morphOpen: 3
+morphOpen: 60
 morphClose: 5
 reprojMax: 8.0
 enableBlur: true

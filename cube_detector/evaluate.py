@@ -1,8 +1,14 @@
-#!/usr/bin/env python3
 import cv2 as cv, yaml, glob, csv, time, pathlib, numpy as np
-from cube_detector.detector_core import findCubePoses
+from cube_detector.detector_core import findCubePoses, findCubePosesCanny
+
+#############
+# File to run cube detection tests on saved images for easier tuning of hyperparameters.
+# Several parameters can be tested simultaneously by creating multiple config files in /config/detect_params/
+# Results are saved in /results
+#############
 
 def load_calib(yaml_file):
+    # Load camera calibration file
     data = yaml.safe_load(open(yaml_file))
     K = np.array(data["camera_matrix"]["data"]).reshape(3,3)
     D = np.array(data["distortion_coefficients"]["data"])
@@ -13,6 +19,7 @@ def as_np_colors(raw):
             for n,(lo,hi) in raw.items()}
 
 def main():
+    # Setup, load configs
     root = pathlib.Path(__file__).resolve().parent
     imgs   = sorted((root/"test_images").glob("*.png"))
     param_files = sorted((root/"config"/"detect_params").glob("*.yaml"))
@@ -34,6 +41,7 @@ def main():
                 img = cv.imread(str(img_path))
                 t0  = time.perf_counter()
                 cubes, overlay = findCubePoses(img, colors, K, D, params)
+                #cubes, overlay = findCubePosesCanny(img, colors, K, D, params)
                 ms = 1000*(time.perf_counter()-t0)
 
                 err = (sum(c["error"] for c in cubes)/len(cubes)) if cubes else 0
