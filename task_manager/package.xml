@@ -1,23 +1,41 @@
 <?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>task_manager</name>
   <version>0.0.1</version>
-  <description>Task manager for UR robot cube detection and pointing project</description>
+  <description>Task manager for UR-3 cube detection and pointing project</description>
+
   <maintainer email="wahidas@stud.ntnu.no">wahid</maintainer>
   <license>Apache-2.0</license>
 
-  <depend>rclpy</depend>
-  <depend>std_msgs</depend>
-  <depend>std_srvs</depend>
-  <depend>geometry_msgs</depend>
-  <depend>cube_interfaces</depend>
-  
-  <test_depend>ament_copyright</test_depend>
-  <test_depend>ament_flake8</test_depend>
-  <test_depend>ament_pep257</test_depend>
-  <test_depend>python3-pytest</test_depend>
+  <!-- build tool -->
+  <buildtool_depend>ament_python</buildtool_depend>
 
+  <!-- runtime dependencies -->
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>urdf</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher_gui</exec_depend>
+  <exec_depend>moveit_py</exec_depend>
+  <exec_depend>cube_interfaces</exec_depend>
+  <exec_depend>controller_manager</exec_depend>
+  <exec_depend>ros2_control_node</exec_depend>
+  <!-- moveit planning interface -->
+  <build_depend>moveit_ros_planning_interface</build_depend>
+  <exec_depend>moveit_ros_planning_interface</exec_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <!-- testing -->
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>launch_testing_ament_cmake</test_depend>
+  <test_depend>launch_testing_ros</test_depend>
+  <test_depend>liburdfdom-tools</test_depend>
+  <test_depend>xacro</test_depend>
 
   <export>
     <build_type>ament_python</build_type>
