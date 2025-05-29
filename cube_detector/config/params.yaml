@@ -2,8 +2,8 @@ cube_detector:
   ros__parameters:
     cubeSize: 0.05
     minArea: 2500
-    maxArea: 30000
-    alpha: 0.05
+    maxArea: 100000
+    alpha: 0.01
     morphOpen: 60
     morphClose: 5
     reprojMax: 8.0
@@ -18,7 +18,7 @@ cube_detector:
     drawPoints: true
     drawPointOrder: false
     drawPose: true
-    shapeCheck: true
+    shapeCheck: false
     minSolidity: 0.9
     minExtent: 0.7
     minAspect: 0.6

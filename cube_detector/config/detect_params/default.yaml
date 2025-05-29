@@ -10,7 +10,7 @@ displayCannyMask: false
 drawColor: true
 cubeSize: 0.05
 minArea: 2500
-maxArea: 30000
+maxArea: 100000
 alpha: 0.05
 morphOpen: 60
 morphClose: 5
