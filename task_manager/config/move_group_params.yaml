@@ -1,0 +1,38 @@
+moveit:
+  ros__parameters:
+    use_moveit:               true
+    planning_pipeline:        ompl
+    planning_time:            5.0
+    planning_attempts:        10
+    max_velocity_scaling:     0.3
+    max_acceleration_scaling: 0.2
+    manipulator_group_name:   manipulator
+    end_effector_link:        tool0
+
+move_group:
+  ros__parameters:
+    planning_plugin: "ompl_interface/OMPLPlanner"
+    request_adapters: >-
+      default_planner_request_adapters/AddTimeParameterization,
+      default_planner_request_adapters/ResolveConstraintFrames,
+      default_planner_request_adapters/FixWorkspaceBounds,
+      default_planner_request_adapters/FixStartStateBounds,
+      default_planner_request_adapters/FixStartStateCollision,
+      default_planner_request_adapters/FixStartStatePathConstraints
+
+robot_description_kinematics:
+  ros__parameters:
+    manipulator:
+      kinematics_solver:                   kdl_kinematics_plugin/KDLKinematicsPlugin
+      kinematics_solver_search_resolution: 0.005
+      kinematics_solver_timeout:           0.005
+
+safety:
+  ros__parameters:
+    workspace:
+      min: [0.1,  -0.5, 0.1]
+      max: [0.7,   0.5, 1.2]
+    joint_limits:
+      lower: [-6.28, -2.09, -6.28, -6.28, -6.28, -6.28]
+      upper: [ 6.28,  2.09,  6.28,  6.28,  6.28,  6.28]
+
