@@ -10,3 +10,6 @@ nbproject/
 /build
 /install
 /log
+
+*pycache*
+*/results

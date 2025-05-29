@@ -22,7 +22,6 @@ The following project features the UR3 robot, where the group is focusing on pro
 * Ubuntu
 * 2x.xx with Ros2 and move it
 * UR-robot
-* Surface tablet
 
 ## Installation
 

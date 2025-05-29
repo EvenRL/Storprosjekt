@@ -1,11 +1,26 @@
 cube_detector:
   ros__parameters:
+    cubeSize: 0.05
     minArea: 2500
-    maxArea: 30000
-    alpha: 0.05
-    debug: false
-    debug_draw_contours: false
-    debug_draw_all_contours: true
-    debug_draw_points: true
-    debug_draw_all_points: false
-    debug_draw_pose: false
+    maxArea: 100000
+    alpha: 0.01
+    morphOpen: 60
+    morphClose: 5
+    reprojMax: 8.0
+    enableBlur: true
+    blurKernelSize: 5
+    displayColorMask: false
+    preprocessing: true
+    claheClip: 2.0
+    claheTile: 8
+    maskCleanup: true
+    drawContours: true
+    drawPoints: true
+    drawPointOrder: false
+    drawPose: true
+    shapeCheck: false
+    minSolidity: 0.9
+    minExtent: 0.7
+    minAspect: 0.6
+    maxAspect: 1.4
+
