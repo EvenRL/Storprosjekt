@@ -30,7 +30,7 @@ num_frames = min(len(imgs) for imgs in images.values())
 # Create subplots grid
 fig, axes = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 4 * n_rows))
 axes = axes.flatten()  # make indexing easier
-plt.suptitle("← / → to change frame index", fontsize=16)
+plt.suptitle("Use arrow keys to change frame index", fontsize=16)
 
 def show_frame(idx):
     for ax in axes:
